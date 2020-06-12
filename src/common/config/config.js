@@ -6,7 +6,7 @@ export default {
       {
         name: "首页",
         subActive: "0",
-        submen: [
+        submenu: [
           {
             icon: "el-icon-s-home",
             name: "后台首页",
@@ -27,7 +27,7 @@ export default {
       {
         name: "商品",
         subActive: "0",
-        submen: [
+        submenu: [
           {
             icon: "el-icon-s-claim",
             name: "商品列表",
