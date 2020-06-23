@@ -1,13 +1,35 @@
 <template>
   <div id="app">
     <router-view></router-view>
+    <image-dialog ref="imageDialog" :max="maxChooseImage"></image-dialog>
   </div>
 </template>
 
 <script>
+import imageDialog from "@/components/image/image-dialog.vue";
 export default {
-  name: 'app',
-}
+  name: "app",
+  provide() {
+    // 依赖注入
+    return {
+      app: this
+    };
+  },
+  data() {
+    return {
+      maxChooseImage: 9
+    };
+  },
+  components: {
+    imageDialog
+  },
+  methods: {
+    chooseImage(callback, max = 9) {
+      this.maxChooseImage = max;
+      this.$refs.imageDialog.chooseImage(callback);
+    }
+  }
+};
 </script>
 
 <style>
