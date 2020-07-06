@@ -2,11 +2,13 @@
   <div id="app">
     <router-view></router-view>
     <image-dialog ref="imageDialog" :max="maxChooseImage"></image-dialog>
+    <skus-dialog ref="skusDialog"></skus-dialog>
   </div>
 </template>
 
 <script>
 import imageDialog from "@/components/image/image-dialog.vue";
+import skusDialog from "@/components/skus/skus-dialog.vue";
 export default {
   name: "app",
   provide() {
@@ -21,12 +23,18 @@ export default {
     };
   },
   components: {
-    imageDialog
+    imageDialog,
+    skusDialog
   },
   methods: {
     chooseImage(callback, max = 9) {
+      // 选择图片
       this.maxChooseImage = max;
       this.$refs.imageDialog.chooseImage(callback);
+    },
+    chooseSkus(callback) {
+      // 选择规格
+      this.$refs.skusDialog.chooseSkus(callback);
     }
   }
 };
