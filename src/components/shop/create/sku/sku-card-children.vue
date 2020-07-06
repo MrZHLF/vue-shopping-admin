@@ -6,9 +6,22 @@
       <!-- 颜色选择器 -->
       <el-color-picker v-if="type === 1" size="mini"></el-color-picker>
       <!-- 图片 -->
-      <span v-else class="btn btn-light border" @click="chooseImage">
-        <i class="el-icon-plus"></i>
-      </span>
+      <template v-else>
+        <span
+          v-if="!item.image"
+          class="btn btn-light border"
+          @click="chooseImage"
+        >
+          <i class="el-icon-plus"></i>
+        </span>
+        <img
+          v-else
+          @click="chooseImage"
+          :src="item.image"
+          class="rounded"
+          style="width: 45px;height: 45px;cursor: pointer;"
+        />
+      </template>
     </div>
     <input
       type="text"
@@ -58,6 +71,7 @@ export default {
       // 选择图片
       this.app.chooseImage(res => {
         console.log(res);
+        this.vModel("image", res[0].url);
       }, 2);
     }
   }
