@@ -4,7 +4,12 @@
   >
     <div v-if="type != 0">
       <!-- 颜色选择器 -->
-      <el-color-picker v-if="type === 1" size="mini"></el-color-picker>
+      <el-color-picker
+        v-if="type === 1"
+        size="mini"
+        :value="item.color"
+        @change="onColorChange"
+      ></el-color-picker>
       <!-- 图片 -->
       <template v-else>
         <span
@@ -73,6 +78,10 @@ export default {
         console.log(res);
         this.vModel("image", res[0].url);
       }, 2);
+    },
+    onColorChange(e) {
+      // 选择颜色
+      this.vModel("color", e);
     }
   }
 };

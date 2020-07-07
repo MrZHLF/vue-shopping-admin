@@ -90,6 +90,11 @@ export default {
     };
   },
   mounted() {
+    // 监听list变化
+    this.$watch("item.list", (newValue, oldValue) => {
+      this.list = newValue;
+    });
+
     this.$dragging.$on("dragging", e => {
       console.log(e);
       if (e.group === "skuItem" + this.index) {
@@ -118,7 +123,10 @@ export default {
     chooseSkus() {
       // 选择规格
       this.app.chooseSkus(res => {
-        console.log(res);
+        this.vModel("name", this.index, res.name);
+        this.vModel("type", this.index, res.type);
+        this.vModel("list", this.index, res.list);
+        this.list = res.list;
       });
     }
   }

@@ -30,7 +30,7 @@
           style="position: absolute;top: 0;left: 200px;right: 0;height: 60px;line-height: 60px;"
           class="border-top border-bottom"
         >
-          <el-button type="primary" size="mini">
+          <el-button type="primary" size="mini" @click="doChooseAll">
             {{ isChooseAll ? "取消全选" : "全选" }}
           </el-button>
         </el-header>
@@ -130,17 +130,24 @@ export default {
     confirm() {
       // 选中的图片skus
       if (typeof this.callback === "function") {
-        this.callback(this.chooseList);
+        let item = this.skusList[this.skuIndex];
+        this.callback({
+          name: item.name,
+          type: item.type,
+          list: this.chooseList
+        });
       }
 
       this.hide();
     },
     hide() {
+      this.unChooseAll();
       this.createModel = false;
       this.callback = false;
     },
     changeSku(index) {
       // 切换规格卡片
+      this.unChooseAll();
       this.skuIndex = index;
     },
     choose(item) {
@@ -157,6 +164,26 @@ export default {
       if (index < 0) return;
       this.chooseList.splice(index, 1);
       item.ischeck = false;
+    },
+    doChooseAll() {
+      // 是否全选
+      let list = this.skusList[this.skuIndex].list;
+      if (this.isChooseAll) {
+        return this.unChooseAll();
+      }
+      // 全选
+      this.chooseList = list.map(v => {
+        v.ischeck = true;
+        return v;
+      });
+    },
+    unChooseAll() {
+      // 取消全选
+      let list = this.skusList[this.skuIndex].list;
+      list.forEach(v => {
+        v.ischeck = false;
+      });
+      this.chooseList = [];
     }
   }
 };

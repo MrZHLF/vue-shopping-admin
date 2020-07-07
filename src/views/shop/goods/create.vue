@@ -49,21 +49,80 @@
 
           <el-form ref="form" label-width="80px">
             <el-form-item label="批量设置">
-              <el-button type="text">销售价</el-button>
-              <el-button type="text">市场价</el-button>
-              <el-button type="text">成本价</el-button>
-              <el-button type="text">库存</el-button>
-              <el-button type="text">体积</el-button>
-              <el-button type="text">重量</el-button>
+              <template v-if="!updateAllStatus">
+                <el-button
+                  type="text"
+                  v-for="(btn, index) in updateList"
+                  :key="index"
+                  @click="openUpdateAllStatus(btn)"
+                  >{{ btn.name }}</el-button
+                >
+              </template>
+
+              <div v-else class="d-flex align-items-center">
+                <el-input
+                  size="small"
+                  style="width: 150px;"
+                  class="mr-2"
+                  type="number"
+                  :placeholder="updateAllPlaceholder"
+                  v-model="updateAllValue"
+                ></el-input>
+                <el-button size="mini" type="primary" @click="updateAllSubmit"
+                  >设置</el-button
+                >
+                <el-button size="mini" @click="closeUpdateAllStatus"
+                  >取消</el-button
+                >
+              </div>
             </el-form-item>
             <el-form-item label="规格设置">
-              <sku-table></sku-table>
+              <sku-table ref="table"></sku-table>
             </el-form-item>
           </el-form>
         </template>
       </el-tab-pane>
       <el-tab-pane label="商品属性">商品属性</el-tab-pane>
-      <el-tab-pane label="媒体设置">媒体设置</el-tab-pane>
+      <el-tab-pane label="媒体设置">
+        <el-form>
+          <el-form-item label="商品大图">
+            <div class="d-flex flex-wrap">
+              <div
+                style="width: 150px;height: 150px;cursor: pointer;position: relative;"
+                class="border rounded d-flex align-items-center justify-content-center mr-3 mb-3"
+                @click="chooseImage(index)"
+                v-for="(item, index) in banners"
+                :key="index"
+              >
+                <img
+                  v-if="item.url"
+                  :src="item.url"
+                  alt=""
+                  style="width: 100%;height: 100%;"
+                />
+                <i
+                  v-else
+                  class="el-icon-plus text-muted"
+                  style="font-size: 30px;"
+                ></i>
+                <i
+                  class="el-icon-delete p-2 text-white"
+                  style="position: absolute;top: 0;right: 0;background: rgba(0,0,0,.4);"
+                  @click.stop="deleteImage(index)"
+                ></i>
+              </div>
+              <div
+                v-if="banners.length < 9"
+                style="width: 150px;height: 150px;cursor: pointer;"
+                class="border rounded d-flex align-items-center justify-content-center mr-3 mb-3"
+                @click="chooseImage(-1)"
+              >
+                <i class="el-icon-plus text-muted" style="font-size: 30px;"></i>
+              </div>
+            </div>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
       <el-tab-pane label="商品详情">
         <!-- 富文本编辑器 -->
         <tinymce ref="editor" v-model="msg" @onClick="onClick"></tinymce>
@@ -81,6 +140,7 @@ import skuCard from "@/components/shop/create/sku/sku-card.vue";
 import skuTable from "@/components/shop/create/sku-table.vue";
 import tinymce from "@/components/common/tinymce.vue";
 export default {
+  inject: ["app"],
   components: {
     baseCreate,
     singleAttrs,
@@ -91,28 +151,25 @@ export default {
   data() {
     return {
       tabIndex: 0,
-      msg: "5151515"
+      msg: "5151515",
+      updateAllStatus: false, //批量修改
+      updateAllPlaceholder: "",
+      updateAllValue: "",
+      updateList: [
+        { name: "销售价", key: "pprice" },
+        { name: "市场价", key: "oprice" },
+        { name: "成本价", key: "cprice" },
+        { name: "库存", key: "stock" },
+        { name: "体积", key: "volume" },
+        { name: "重量", key: "weight" }
+      ]
     };
   },
   computed: {
     ...mapState({
       skus_type: state => state.goods_create.skus_type, //0单规格1多规格
-      title: state => state.goods_create.title,
-      category: state => state.goods_create.category,
-      desc: state => state.goods_create.desc, //描述
-      unit: state => state.goods_create.unit, //商品单位
-      stock: state => state.goods_create.stock, //总库存
-      min_stock: state => state.goods_create.min_stock, //库存预警
-      display_stock: state => state.goods_create.display_stock, //库存显示
-      status: state => state.goods_create.status, //是否上架
-      express: state => state.goods_create.express, //运费模板
-      oprice: state => state.goods_create.oprice, // 市场价格
-      pprice: state => state.goods_create.pprice, // 销售价格
-      cprice: state => state.goods_create.cprice, // 成本价格
-      weight: state => state.goods_create.weight, // 重量
-      volume: state => state.goods_create.volume, // 体积
-
-      sku_card: state => state.goods_create.sku_card //规格
+      sku_card: state => state.goods_create.sku_card, //规格
+      banners: state => state.goods_create.banners //商品大图
     }),
     skuCardTotal() {
       // 是否是最后一个,规格卡片总数
@@ -132,6 +189,58 @@ export default {
     },
     onClick(e) {
       console.log(e);
+    },
+    openUpdateAllStatus(item) {
+      // 修改批量设置
+      this.updateAllStatus = item.key;
+      this.updateAllPlaceholder = item.name;
+    },
+    // 取消批量设置状态
+    closeUpdateAllStatus() {
+      this.updateAllStatus = false;
+      this.updateAllValue = "";
+    },
+    // 提交批量设置
+    updateAllSubmit() {
+      this.$refs.table.list.forEach(item => {
+        item[this.updateAllStatus] = this.updateAllValue;
+      });
+      this.closeUpdateAllStatus();
+    },
+    chooseImage(index) {
+      // 选择图片
+      const MAX = 9;
+      let count = MAX - this.banners.length;
+      this.app.chooseImage(
+        res => {
+          let list = [];
+          if (index === -1) {
+            list = [...this.banners, ...res];
+          } else {
+            list = [...this.banners];
+            list[index] = res[0];
+          }
+
+          this.vModel("banners", list);
+        },
+        index === -1 ? count : 1
+      );
+    },
+    deleteImage(index) {
+      // 删除大图
+      this.$confirm("是否删除该图片?", "提示", {
+        confirmButtonText: "删除",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(() => {
+        let list = [...this.banners];
+        list.splice(index, 1);
+        this.vModel("banners", list);
+        this.$message({
+          type: "success",
+          message: "删除成功!"
+        });
+      });
     }
   }
 };
