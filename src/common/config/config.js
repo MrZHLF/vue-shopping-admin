@@ -34,9 +34,14 @@ export default {
             pathname: "shop_goods_list"
           },
 		  {
-		    icon: "el-icon-s-help",
+		    icon: "el-icon-picture",
 		    name: "分类管理",
 		    pathname: "shop_category_list"
+		  },
+		  {
+		    icon: "el-icon-s-help",
+		    name: "商品规格",
+		    pathname: "shop_sku_list"
 		  }
         ]
       },

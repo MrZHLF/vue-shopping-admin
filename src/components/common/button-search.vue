@@ -4,7 +4,7 @@
 			<!-- 左边 -->
 			<slot name="left"></slot>
 			<!-- 右边 -->
-			<div class="ml-auto" v-show="!superSearch">
+			<div class="ml-auto" v-show="!superSearch" v-if="superSearch">
 				<slot name="right">
 					<el-input v-model="keyword" :placeholder="placeholder" size="mini" style="width: 200px;" class="mr-2"></el-input>
 					<el-button type="info" size="mini" @click="$emit('serach',keyword)">搜索</el-button>
@@ -12,7 +12,7 @@
 				</slot>
 			</div>
 		</div>
-		<el-card class="box-card bg-light my-3" v-show="superSearch">
+		<el-card class="box-card bg-light my-3" v-show="showSearch">
 			<div slot="header" class="clearfix" style="margin: -10px;">
 				<span >高级搜索</span>
 				<el-button style="float: right; padding: 3px 0" type="text" @click="closeSuperSearch">收起</el-button>
@@ -29,6 +29,10 @@
 			placeholder:{
 				type:String,
 				default:""
+			},
+			showSearch:{
+				type:Boolean,
+				default:true
 			}
 		},
 		data() {
