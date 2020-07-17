@@ -17,7 +17,7 @@ export default {
     cprice: 0, // 成本价格
     weight: 0, // 重量
     volume: 0, // 体积
-
+	
     sku_card: [
       {
         name: "颜色",
@@ -63,7 +63,12 @@ export default {
       { name: "体积", rowspan: 2, width: "100" },
       { name: "重量", rowspan: 2, width: "100" },
       { name: "编码", rowspan: 2, width: "100" }
-    ]
+    ],
+	goods_type_id:1, //商品类型
+	goods_attrs:{
+		phone_model:""
+	}, //商品属性
+	discount:0,// 折扣
   },
   mutations: {
     // 修改state
@@ -110,7 +115,11 @@ export default {
     //排序规格卡片的规格属性列表
     sortSkuValue(state, { index, value }) {
       state.sku_card[index].list = value;
-    }
+    },
+	// 修改商品属性
+	vModelGoodsattrs(state, { key,value }) {
+	  state.goods_attrs[key] = value;
+	},
   },
   getters: {
     skuLabels(state) {

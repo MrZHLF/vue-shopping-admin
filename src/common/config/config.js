@@ -32,7 +32,12 @@ export default {
             icon: "el-icon-s-claim",
             name: "商品列表",
             pathname: "shop_goods_list"
-          }
+          },
+		  {
+		    icon: "el-icon-s-help",
+		    name: "分类管理",
+		    pathname: "shop_category_list"
+		  }
         ]
       },
       {
