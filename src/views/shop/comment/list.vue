@@ -4,6 +4,7 @@
     style="margin: -20px;margin-top: -1rem;margin-bottom: 0!important;"
   >
     <button-search
+      class="pt-3"
       ref="buttonSearch"
       placeholder="要搜索的商品名称"
       @serach="searchEvent"
