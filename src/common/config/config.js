@@ -105,6 +105,16 @@ export default {
             icon: "el-icon-s-promotion",
             name: "物流设置",
             pathname: "set_express"
+          },
+          {
+            icon: "el-icon-user-solid",
+            name: "管理员管理",
+            pathname: "set_manager"
+          },
+          {
+            icon: "el-icon-s-claim",
+            name: "交易设置",
+            pathname: "set_payment"
           }
         ]
       }

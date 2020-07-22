@@ -83,25 +83,33 @@
         </template>
       </el-tab-pane>
       <el-tab-pane label="商品属性">
-		 <el-form>
-		 	<el-form-item label="商品类型">
-		 		<el-select :value="goods_type_id" placeholder="请选择商品类型" @change="vModel('goods_type_id',$event)">
-		 			<el-option label="区域一" value="shanghai"></el-option>
-		 			<el-option label="区域二" value="beijing"></el-option>
-		 		</el-select>
-		 	</el-form-item>
-		 </el-form>
-		 <el-card class="box-card">
-		 	<div slot="header" class="clearfix">
-		 		<span>商品属性</span>
-		 	</div>
-		 	<el-form ref="form" label-width="80px">
-		 		<el-form-item label="手机型号">
-		 			<el-input :value="goods_attrs.phone_model" @input="vModelGoodsattrs({key:'phone_model',value:$event})" placeholder="请输入手机型号"></el-input>
-		 		</el-form-item>
-		 	</el-form>
-		 </el-card>
-	  </el-tab-pane>
+        <el-form>
+          <el-form-item label="商品类型">
+            <el-select
+              :value="goods_type_id"
+              placeholder="请选择商品类型"
+              @change="vModel('goods_type_id', $event)"
+            >
+              <el-option label="区域一" value="shanghai"></el-option>
+              <el-option label="区域二" value="beijing"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
+        <el-card class="box-card">
+          <div slot="header" class="clearfix">
+            <span>商品属性</span>
+          </div>
+          <el-form ref="form" label-width="80px">
+            <el-form-item label="手机型号">
+              <el-input
+                :value="goods_attrs.phone_model"
+                @input="vModelGoodsattrs({ key: 'phone_model', value: $event })"
+                placeholder="请输入手机型号"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
       <el-tab-pane label="媒体设置">
         <el-form>
           <el-form-item label="商品大图">
@@ -147,14 +155,14 @@
         <tinymce ref="editor" v-model="msg" @onClick="onClick"></tinymce>
       </el-tab-pane>
       <el-tab-pane label="折扣设置">
-		<el-form ref="form"  label-width="80px">
-			<el-form-item label="会员价">
-				<el-input :value="discount" @input="vModel('discount',$event)">
-					<template slot="append">%</template>
-				</el-input>
-			</el-form-item>
-		</el-form>
-	  </el-tab-pane>
+        <el-form ref="form" label-width="80px">
+          <el-form-item label="会员价">
+            <el-input :value="discount" @input="vModel('discount', $event)">
+              <template slot="append">%</template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -196,10 +204,10 @@ export default {
     ...mapState({
       skus_type: state => state.goods_create.skus_type, //0单规格1多规格
       sku_card: state => state.goods_create.sku_card, //规格
-      banners: state => state.goods_create.banners ,//商品大图,
-	  goods_type_id:state => state.goods_create.goods_type_id,
-	  goods_attrs:state => state.goods_create.goods_attrs,
-	  discount:state => state.goods_create.discount,
+      banners: state => state.goods_create.banners, //商品大图,
+      goods_type_id: state => state.goods_create.goods_type_id,
+      goods_attrs: state => state.goods_create.goods_attrs,
+      discount: state => state.goods_create.discount
     }),
     skuCardTotal() {
       // 是否是最后一个,规格卡片总数
@@ -208,7 +216,7 @@ export default {
   },
   mounted() {},
   methods: {
-    ...mapMutations(["vModelState", "addSkuCard","vModelGoodsattrs"]),
+    ...mapMutations(["vModelState", "addSkuCard", "vModelGoodsattrs"]),
     //修改表单值
     vModel(key, value) {
       this.vModelState({ key, value });
@@ -271,7 +279,7 @@ export default {
           message: "删除成功!"
         });
       });
-    },
+    }
   }
 };
 </script>

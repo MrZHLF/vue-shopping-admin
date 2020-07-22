@@ -1,7 +1,7 @@
 export default {
   filters: {
     numToString(value) {
-      return value.toString()
-    },
-  },
-}
+      return value.toString();
+    }
+  }
+};

@@ -44,31 +44,39 @@
 
 <script>
 export default {
-  name: 'login',
+  name: "login",
   data() {
     return {
       form: {
-        username: '',
-        password: '',
+        username: "",
+        password: ""
       },
       rules: {
         username: [
-          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { required: true, message: "请输入用户名", trigger: "blur" }
         ],
-        password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-      },
-    }
+        password: [{ required: true, message: "请输入密码", trigger: "blur" }]
+      }
+    };
   },
   methods: {
     onSubmit() {
-      this.$refs.ruleForm.validate((valid) => {
-        if (!valid) return
+      this.$refs.ruleForm.validate(valid => {
+        if (!valid) return;
         //提交表单
-        this.$router.push('/')
-      })
-    },
-  },
-}
+        // this.$router.push("/");
+        this.axios
+          .post("/admin/login", {
+            username: this.form.username,
+            password: this.form.password
+          })
+          .then(res => {
+            console.log(res);
+          });
+      });
+    }
+  }
+};
 </script>
 
 <style></style>
