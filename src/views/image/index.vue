@@ -151,10 +151,10 @@
               @size-change="handleSizeChange"
               @current-change="handleCurrentChange"
               :current-page="currentPage"
-              :page-sizes="[100, 200, 300, 400]"
-              :page-size="100"
+              :page-sizes="pageSizes"
+              :page-size="pageSize"
               layout="total, sizes, prev, pager, next, jumper"
-              :total="400"
+              :total="total"
             >
             </el-pagination>
           </div>
@@ -220,7 +220,7 @@ export default {
   },
   data() {
     return {
-      currentPage: 0,
+      currentPage: 1,
       searchForm: {
         order: "",
         keyword: ""
@@ -237,12 +237,28 @@ export default {
       previewModel: false, //预览图片
       imageList: [],
       previewUrl: "", //预览图
-      chooseList: [] //选中数组
+      chooseList: [], //选中数组
+      albumPage: 1,
+      pageSize: 10,
+      pageSizes: [10, 20, 50, 100],
+      total: 10
     };
   },
   computed: {
     albumModelTitle() {
       return this.albumEditIndex > -1 ? "修改相册" : "创建相册";
+    },
+    image_class_id() {
+      // 选中相册的id
+      let item = this.albums[this.albumIndex];
+      if (item) {
+        return item.id;
+      }
+      return 0;
+    },
+    //当前选择图片的url
+    getImagesListUrl() {
+      return `/admin/imageclass/${this.image_class_id}/image/${this.currentPage}?limit=${this.pageSize}`;
     }
   },
   created() {
@@ -302,24 +318,34 @@ export default {
       //重置序号
       item.checkOrder = 0;
     },
+    getImagesLists() {
+      this.$axios
+        .get(this.getImagesListUrl, {
+          token: true
+        })
+        .then(res => {
+          let result = res.data.data;
+          this.total = result.totalCount; //总数
+          console.log(res);
+          this.imageList = result.list.map(item => {
+            return {
+              id: item.id,
+              url: item.url,
+              name: item.name,
+              ischeck: false,
+              checkOrder: 0
+            };
+          });
+        });
+    },
     __init() {
-      for (var i = 0; i < 20; i++) {
-        this.albums.push({
-          name: "相册" + i,
-          num: Math.floor(Math.random() * 100),
-          order: 0
+      this.$axios
+        .get(`/admin/imageclass/${this.albumPage}`, { token: true })
+        .then(res => {
+          let result = res.data.data;
+          this.albums = result.list;
+          this.getImagesLists();
         });
-      }
-      for (var i = 0; i < 30; i++) {
-        this.imageList.push({
-          id: i,
-          url:
-            "https://tangzhe123-com.oss-cn-shenzhen.aliyuncs.com/Appstatic/qsbk/demo/datapic/40.jpg",
-          name: "图片" + i,
-          ischeck: false,
-          checkOrder: 0
-        });
-      }
     },
     albumChange(index) {
       // 切换相册
@@ -429,8 +455,15 @@ export default {
         });
       });
     },
-    handleSizeChange() {},
-    handleCurrentChange() {}
+    handleSizeChange(val) {
+      this.pageSize = val;
+      this.getImagesLists();
+    },
+    handleCurrentChange(val) {
+      console.log(val);
+      this.currentPage = val;
+      this.getImagesLists();
+    }
   }
 };
 </script>

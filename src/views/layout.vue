@@ -4,9 +4,7 @@
       style="position: absolute;left: 0;top: 0;bottom: 0;right: 0; overflow: hidden;"
     >
       <el-header class="d-flex align-items-center" style="background: #545c64;">
-        <a class="h5 text-light mb-0 mr-auto">
-          {{ $conf.logo }}
-        </a>
+        <a class="h5 text-light mb-0 mr-auto">{{ $conf.logo }}</a>
         <el-menu
           :default-active="navBar.active"
           mode="horizontal"
@@ -26,9 +24,13 @@
             <template slot="title">
               <el-avatar
                 size="small"
-                src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png"
+                :src="
+                  user.avatar
+                    ? user.avatar
+                    : 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+                "
               ></el-avatar>
-              summer
+              {{ user.username }}
             </template>
             <el-menu-item index="100-1">修改</el-menu-item>
             <el-menu-item index="100-2">退出</el-menu-item>
@@ -69,8 +71,7 @@
                 v-for="(item, index) in bran"
                 :key="index"
                 :to="{ path: item.path }"
-              >
-                {{ item.title }}</el-breadcrumb-item
+                >{{ item.title }}</el-breadcrumb-item
               >
             </el-breadcrumb>
           </div>
@@ -93,17 +94,18 @@
 
 <script>
 import common from "@/common/mixins/common.js";
+import { mapState } from "vuex";
 export default {
   mixins: [common],
   data() {
     return {
-      navBar: [],
+      // navBar: [],
       bran: []
     };
   },
   created() {
     // 初始化菜单
-    this.navBar = this.$conf.navBar;
+    // this.navBar = this.$conf.navBar;
     // 获取面包屑导航
     this.getRouterBran();
     // 初始化选中菜单
@@ -123,16 +125,31 @@ export default {
     }
   },
   computed: {
+    ...mapState({
+      user: state => state.user.user,
+      navBar: state => state.menu.navBar
+    }),
     slideMenuActive: {
       get() {
-        return this.navBar.list[this.navBar.active].subActive || "0";
+        // return this.navBar.list[this.navBar.active].subActive || "0";
+        let item = this.navBar.list[this.navBar.active];
+        return item ? item.subActive : "0";
       },
       set(val) {
-        this.navBar.list[this.navBar.active].subActive = val;
+        // this.navBar.list[this.navBar.active].subActive = val;
+        let item = this.navBar.list[this.navBar.active];
+        if (item) {
+          item.subActive = val;
+        }
       }
     },
     slideMenus() {
-      return this.navBar.list[this.navBar.active].submenu || [];
+      let item = this.navBar.list[this.navBar.active];
+      if (item) {
+        return item ? item.submenu : [];
+      }
+
+      // return this.navBar.list[this.navBar.active].submenu || [];
     }
   },
   methods: {
@@ -167,7 +184,7 @@ export default {
         return console.log("修改资料");
       }
       if (key === "100-2") {
-        return console.log("退出登录");
+        return this.logout();
       }
       this.navBar.active = key;
       // 默认选中跳转到当前激活
@@ -184,6 +201,31 @@ export default {
       this.$router.push({
         name: this.slideMenus[key].pathname
       });
+    },
+    logout() {
+      this.axios
+        .post(
+          "/admin/logout",
+          {},
+          {
+            token: true,
+            loading: true
+          }
+        )
+        .then(res => {
+          this.$message("退出成功");
+          // 清除状态和存储
+          this.$store.commit("logout");
+          // 返回到登录页
+          this.$router.push({ name: "login" });
+        })
+        .catch(err => {
+          console.log(err.response);
+          // 清除状态和存储
+          this.$store.commit("logout");
+          // 返回到登录页
+          this.$router.push({ name: "login" });
+        });
     }
   }
 };

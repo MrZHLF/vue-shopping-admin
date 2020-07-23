@@ -30,7 +30,8 @@
                     size="medium"
                     @click="onSubmit"
                     class="w-100"
-                    >登录</el-button
+                    :loading="loading"
+                    >{{ loading ? "登录中..." : "立即登录" }}</el-button
                   >
                 </el-form-item>
               </el-form>
@@ -43,6 +44,7 @@
 </template>
 
 <script>
+import { mapGetters } from "vuex";
 export default {
   name: "login",
   data() {
@@ -51,6 +53,7 @@ export default {
         username: "",
         password: ""
       },
+      loading: false,
       rules: {
         username: [
           { required: true, message: "请输入用户名", trigger: "blur" }
@@ -59,12 +62,16 @@ export default {
       }
     };
   },
+  computed: {
+    ...mapGetters(["adminIndex"])
+  },
   methods: {
     onSubmit() {
       this.$refs.ruleForm.validate(valid => {
         if (!valid) return;
         //提交表单
         // this.$router.push("/");
+        this.loading = true;
         this.axios
           .post("/admin/login", {
             username: this.form.username,
@@ -72,6 +79,25 @@ export default {
           })
           .then(res => {
             console.log(res);
+            let data = res.data.data;
+            // 存储到Vuex
+            this.$store.commit("login", data);
+            // 生成后台菜单
+            this.$store.commit("createMenuBar", data.tree);
+            // 存储权限规则
+            if (data.role && data.role.rules) {
+              window.sessionStorage.setItem(
+                "rules",
+                JSON.stringify(data.role.rules)
+              );
+            }
+            this.$message.success("登录成功");
+            this.loading = false;
+            // 跳转首页
+            this.$router.push({ name: this.adminIndex });
+          })
+          .catch(err => {
+            this.loading = false;
           });
       });
     }

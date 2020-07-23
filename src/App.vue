@@ -22,6 +22,11 @@ export default {
       maxChooseImage: 9
     };
   },
+  created() {
+    // 初始化用户信息
+    this.$store.commit("initUser");
+    this.$store.commit("initNavBar");
+  },
   components: {
     imageDialog,
     skusDialog
