@@ -6,56 +6,69 @@ import store from "./store";
 import "./plugins/element.js";
 // import ElementUI from "element-ui";
 
-import { Message, Loading } from "element-ui";
-
-let loading; //定义loading变量
-
+import { Message } from "element-ui";
+let loading = null;
+let requestCount = 0;
 // 显示loading
 function showLoading() {
-  loading = Loading.service({
-    lock: true,
-    text: "加载中...",
-    background: "rgba(0, 0, 0, 0.7)"
-  });
+  if (requestCount === 0) {
+    loading = Message({
+      message: "加载中...",
+      duration: 0
+    });
+  }
+  requestCount++;
 }
 // 隐藏loading
 function hideLoading() {
-  loading.close();
+  if (requestCount > 0) {
+    requestCount--;
+  }
+  if (loading && requestCount === 0) {
+    loading.close();
+  }
 }
 
 // 添加请求拦截器
 axios.interceptors.request.use(
   config => {
-    // 全局设置token
-    showLoading();
+    // 添加header头的token
     let token = window.sessionStorage.getItem("token");
-    if (config.token == true) {
+    if (config.token === true) {
       config.headers["token"] = token;
     }
+    // 显示loading
+    if (config.loading === true) {
+      showLoading();
+    }
+    // 在发送请求之前做些什么
     return config;
   },
   error => {
-    // 对请求错误做些什么
     // 隐藏loading
     hideLoading();
+    // 对请求错误做些什么
     return Promise.reject(error);
   }
 );
+
 // 添加响应拦截器
 axios.interceptors.response.use(
   response => {
-    // 对响应数据做点什么
+    console.log("响应拦截器 成功");
     // 隐藏loading
     hideLoading();
+    // 对响应数据做点什么
     return response;
   },
   err => {
-    // 对响应错误做点什么
+    // 全局错误提示
     if (err.response && err.response.data && err.response.data.errorCode) {
       Message.error(err.response.data.msg);
     }
     // 隐藏loading
     hideLoading();
+    // 对响应错误做点什么
     return Promise.reject(err);
   }
 );

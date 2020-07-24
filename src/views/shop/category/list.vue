@@ -21,7 +21,7 @@
         <div>
           <el-input
             v-if="data.editStatus"
-            v-model="data.label"
+            v-model="data.name"
             size="mini"
           ></el-input>
           <span v-else>{{ node.label }}</span>
@@ -53,49 +53,104 @@
 
 <script>
 export default {
+  inject: ["layout"],
   data() {
     return {
-      data: [
-        {
-          id: 1,
-          label: "一级 1",
-          status: 1,
-          editStatus: false,
-          children: [
-            {
-              id: 2,
-              label: "二级 1-1",
-              status: 1,
-              editStatus: false,
-              children: [
-                {
-                  id: 3,
-                  label: "三级 1-1-1",
-                  status: 1,
-                  editStatus: false
-                }
-              ]
-            }
-          ]
-        }
-      ],
+      data: [],
       defaultProps: {
-        children: "children",
-        label: "label"
+        children: "child",
+        label: "name"
       }
     };
   },
+  created() {
+    this.__init();
+  },
   methods: {
+    __init() {
+      // 初始化
+      this.layout.showLoading();
+      this.axios
+        .get("admin/category", { token: true })
+        .then(res => {
+          console.log(res);
+          let data = res.data.data;
+          let addEditStatus = function(arr) {
+            arr.forEach(item => {
+              item.editStatus = false;
+              if (item.child.length) {
+                addEditStatus(item.child);
+              }
+            });
+          };
+          addEditStatus(data);
+          this.data = data;
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
     handleNodeClick(data) {
       console.log(data);
     },
     showOrHide(data) {
-      // 显示和隐藏
-      data.status = data.status ? 0 : 1;
+      this.layout.showLoading();
+      let status = data.status ? 0 : 1;
+      let msg = status ? "显示" : "隐藏";
+      this.axios
+        .post(
+          "/admin/category/" + data.id + "/update_status",
+          { status },
+          { token: true }
+        )
+        .then(res => {
+          data.status = status;
+          this.layout.hideLoading();
+          this.$message({
+            message: msg + "成功",
+            type: "success"
+          });
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
     },
     edit(data) {
       // 修改
-      data.editStatus = !data.editStatus;
+      if (!data.editStatus) {
+        return (data.editStatus = true);
+      }
+      if (data.name == "") {
+        return this.$message({
+          message: "分类名称不能为空",
+          type: "error"
+        });
+      }
+      this.layout.showLoading();
+      this.axios
+        .post(
+          "/admin/category/" + data.id,
+          {
+            status: data.status,
+            name: data.name,
+            category_id: data.category_id
+          },
+          {
+            token: true
+          }
+        )
+        .then(res => {
+          this.$message({
+            message: "修改成功",
+            type: "success"
+          });
+          data.editStatus = false;
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
     },
     remove(node, data) {
       // 删除
@@ -104,28 +159,49 @@ export default {
         cancelButtonText: "取消",
         type: "warning"
       }).then(() => {
-        let parent = node.parent;
-        let children = parent.data.children || parent.data;
-        let index = children.findIndex(v => {
-          return v.id === data.id;
-        });
-        children.splice(index, 1);
-        this.$message({
-          type: "success",
-          message: "删除成功!"
-        });
+        this.layout.showLoading();
+        this.axios
+          .delete("/admin/category/" + data.id, {
+            token: true
+          })
+          .then(res => {
+            this.__init();
+            this.$message({
+              message: "删除成功",
+              type: "success"
+            });
+            this.layout.hideLoading();
+          })
+          .catch(err => {
+            this.layout.hideLoading();
+          });
       });
     },
     append(data) {
       // 增加子分类
-      let newObj = {
-        id: 2,
-        label: "二级 1-1",
-        status: 1,
-        editStatus: true,
-        children: []
-      };
-      data.children.push(newObj);
+      this.layout.showLoading();
+      this.axios
+        .post(
+          "admin/category",
+          {
+            status: 0,
+            name: "新名称",
+            category_id: data.id
+          },
+          {
+            token: true
+          }
+        )
+        .then(res => {
+          let obj = res.data.data;
+          obj.editStatus = true;
+          obj.child = [];
+          data.child.push(obj);
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
     },
     handleDrop() {},
     createTop() {
@@ -139,8 +215,25 @@ export default {
           return true;
         }
       }).then(({ value }) => {
-        console.log(value);
         // 提交
+        this.layout.showLoading();
+        this.axios
+          .post(
+            "/admin/category",
+            {
+              status: 0,
+              category_id: 0,
+              name: value
+            },
+            { token: true }
+          )
+          .then(res => {
+            this.__init();
+            this.layout.hideLoading();
+          })
+          .catch(err => {
+            this.layout.hideLoading();
+          });
       });
     }
   }

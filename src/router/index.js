@@ -10,7 +10,6 @@ let router = new Router({
 });
 
 router.beforeEach((to, from, next) => {
-  console.log(to, from);
   let token = window.sessionStorage.getItem("token");
   if (token) {
     // 已登录

@@ -59,6 +59,7 @@
         <el-main
           class="bg-light"
           style="padding-bottom: 60px;position: relative;"
+          v-loading="loading"
         >
           <!-- 面包屑导航 -->
           <div
@@ -97,10 +98,16 @@ import common from "@/common/mixins/common.js";
 import { mapState } from "vuex";
 export default {
   mixins: [common],
+  provide() {
+    return {
+      layout: this
+    };
+  },
   data() {
     return {
       // navBar: [],
-      bran: []
+      bran: [],
+      loading: false
     };
   },
   created() {
@@ -153,6 +160,14 @@ export default {
     }
   },
   methods: {
+    // 显示loading
+    showLoading() {
+      this.loading = true;
+    },
+    // 隐藏loading
+    hideLoading() {
+      this.loading = false;
+    },
     __initNavBar() {
       let r = localStorage.getItem("navActive");
       if (r) {
