@@ -30,7 +30,7 @@
       <el-table-column prop="name" width="380" label="规格名称">
       </el-table-column>
       <el-table-column
-        prop="value"
+        prop="default"
         align="center"
         width="380"
         label="规格值"
@@ -64,7 +64,7 @@
               type="danger"
               size="mini"
               plain
-              @click="deleteItem(scope)"
+              @click="deleteItem(scope.row)"
               >删除</el-button
             >
           </el-button-group>
@@ -78,16 +78,22 @@
     >
       <div style="flex: 1;" class="p-2">
         <el-pagination
-          :current-page="currentPage"
-          :page-sizes="[100, 200, 300, 400]"
-          :page-size="100"
+          :current-page="page.current"
+          :page-sizes="page.sizes"
+          :page-size="page.size"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="400"
+          :total="page.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         ></el-pagination>
       </div>
     </el-footer>
 
-    <el-dialog title="添加规格" :visible.sync="createModel" top="5vh">
+    <el-dialog
+      :title="editIndex > -1 ? '修改规格' : '添加规格'"
+      :visible.sync="createModel"
+      top="5vh"
+    >
       <el-form ref="ruleForm" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="规格名称" prop="name">
           <el-input
@@ -117,9 +123,9 @@
             <el-radio :label="2" border>图片</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="规格值" prop="value">
+        <el-form-item label="规格值" prop="default">
           <el-input
-            v-model="form.value"
+            v-model="form.default"
             type="textarea"
             :rows="2"
             placeholder="一行为一个规格项,多个规格项用换行输入"
@@ -137,47 +143,20 @@
 import buttonSearch from "@/components/common/button-search.vue";
 export default {
   name: "list",
+  inject: ["layout"],
   components: {
     buttonSearch
   },
   data() {
     return {
-      tableData: [
-        {
-          id: 1,
-          name: "颜色",
-          value: "红色",
-          order: 50,
-          type: 0,
-          status: 1
-        },
-        {
-          id: 2,
-          name: "文字",
-          value: "小说",
-          order: 10,
-          type: 0,
-          status: 1
-        },
-        {
-          id: 3,
-          name: "颜色",
-          value: "蓝色",
-          order: 500,
-          type: 0,
-          status: 1
-        },
-        {
-          id: 4,
-          name: "文字",
-          value: "电影",
-          order: 50,
-          type: 0,
-          status: 1
-        }
-      ],
+      page: {
+        current: 1,
+        sizes: [10, 20, 50, 100],
+        size: 10,
+        total: 0
+      },
+      tableData: [],
       multipleSelection: [], //多选
-      currentPage: 1,
       createModel: false,
       editIndex: -1, //是否编辑或者修改
       form: {
@@ -185,34 +164,80 @@ export default {
         order: 50,
         status: 1,
         type: 0,
-        value: ""
+        default: ""
       },
       rules: {
         name: [
           { required: true, message: "规格名称不能为空", trigger: "blur" }
         ],
-        value: [{ required: true, message: "规格值不能为空", trigger: "blur" }]
+        default: [
+          { required: true, message: "规格值不能为空", trigger: "blur" }
+        ]
       }
     };
   },
   created() {
-    this.__getData();
+    this.getList();
+  },
+  computed: {
+    ids() {
+      return this.multipleSelection.map(item => {
+        return item.id;
+      });
+    }
   },
   methods: {
+    getList() {
+      this.layout.showLoading();
+      let url = `/admin/skus/${this.page.current}?limit=${this.page.size}`;
+      this.axios
+        .get(url, {
+          token: true
+        })
+        .then(res => {
+          let data = res.data.data;
+          this.tableData = data.list;
+          this.page.total = data.totalCount;
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
     deleteAll() {
       // 批量删除
+      if (this.ids.length === 0) {
+        return this.$message({
+          message: "选择要删除的信息",
+          type: "error"
+        });
+      }
       this.$confirm("此操作将永久删除选中规格, 是否继续?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning"
       }).then(() => {
-        this.multipleSelection.forEach(item => {
-          let index = this.tableData.findIndex(v => v.id === item.id);
-          if (index !== -1) {
-            this.tableData.splice(index, 1);
-          }
-        });
-        this.multipleSelection = [];
+        this.layout.showLoading();
+        this.axios
+          .post(
+            "/admin/skus/delete_all",
+            {
+              ids: this.ids
+            },
+            { token: true }
+          )
+          .then(res => {
+            this.$message({
+              message: "删除成功",
+              type: "success"
+            });
+            this.getList();
+            this.layout.hideLoading();
+            this.multipleSelection = [];
+          })
+          .catch(err => {
+            this.layout.hideLoading();
+          });
       });
     },
     openModel(e = false) {
@@ -223,7 +248,7 @@ export default {
           order: 50,
           status: 1,
           type: 0,
-          value: ""
+          default: ""
         };
         this.editIndex = -1;
       } else {
@@ -233,7 +258,7 @@ export default {
           order: e.row.order,
           status: e.row.status,
           type: e.row.type,
-          value: e.row.value.replace(",", "\n")
+          default: e.row.default.replace(",", "\n")
         };
         this.editIndex = e.$index;
       }
@@ -245,51 +270,109 @@ export default {
       this.$refs.ruleForm.validate(res => {
         //提交表单
         if (res) {
-          var msg = "添加";
-          this.form.value = this.form.value.replace(/\n/g, ",");
+          this.form.default = this.form.default.replace(/\n/g, ",");
           if (this.editIndex === -1) {
             // 添加
-            this.tableData.unshift(this.form);
+            this.layout.showLoading();
+            this.axios
+              .post("/admin/skus", this.form, {
+                token: true
+              })
+              .then(res => {
+                this.$message({
+                  message: "添加成功",
+                  type: "success"
+                });
+                this.getList();
+                this.layout.hideLoading();
+              })
+              .catch(err => {
+                this.layout.hideLoading();
+              });
           } else {
             // 编辑
             let item = this.tableData[this.editIndex];
-            item.name = this.form.name;
-            item.order = this.form.order;
-            item.status = this.form.status;
-            item.type = this.form.type;
-            item.value = this.form.value.replace(/\n/g, ",");
-            msg = "修改";
+            this.layout.showLoading();
+            this.axios
+              .post("/admin/skus/" + item.id, this.form, {
+                token: true
+              })
+              .then(res => {
+                this.$message({
+                  message: "编辑成功",
+                  type: "success"
+                });
+                this.getList();
+                this.layout.hideLoading();
+              })
+              .catch(err => {
+                this.layout.hideLoading();
+              });
           }
           this.createModel = false;
+        }
+      });
+    },
+    changeStatus(item) {
+      // 修改状态
+      this.layout.showLoading();
+      let status = item.status === 1 ? 0 : 1;
+      let msg = item.status === 1 ? "启用" : "禁用";
+      this.axios
+        .post(
+          `/admin/skus/${item.id}/update_status`,
+          {
+            status: status
+          },
+          { token: true }
+        )
+        .then(res => {
+          item.status = status;
           this.$message({
             message: msg + "成功",
             type: "success"
           });
-        }
-      });
-    },
-    __getData() {},
-    changeStatus(item) {
-      // 修改状态
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
       item.status = !item.status;
-      this.$message({
-        message: item.status ? "启用成功" : "禁用",
-        type: "success"
-      });
     },
     handleSelectionChange(val) {
       this.multipleSelection = val;
     },
-    deleteItem(scope) {
+    deleteItem(item) {
+      console.log(item);
       // 删除商品规格
-      console.log(scope);
       this.$confirm("此操作将永久删除该规格, 是否继续?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning"
       }).then(() => {
-        this.tableData.splice(scope.$index, 1);
+        this.layout.showLoading();
+        this.axios
+          .post("/admin/skus/" + item.id + "/delete", {}, { token: true })
+          .then(res => {
+            this.getList();
+            this.layout.hideLoading();
+            this.$message({
+              message: "删除成功",
+              type: "success"
+            });
+          })
+          .catch(err => {
+            this.layout.hideLoading();
+          });
       });
+    },
+    handleSizeChange(val) {
+      this.page.size = val;
+      this.getList();
+    },
+    handleCurrentChange(val) {
+      this.page.current = val;
+      this.getList();
     }
   }
 };

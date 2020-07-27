@@ -16,6 +16,7 @@
       @node-click="handleNodeClick"
       draggable
       @node-drop="handleDrop"
+      @node-drag-end="nodeDragEnd"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <div>
@@ -66,6 +67,29 @@ export default {
   created() {
     this.__init();
   },
+  computed: {
+    sortData() {
+      let data = [];
+      let sort = function(arr) {
+        arr.forEach(item => {
+          data.push(item);
+          if (item.child.length) {
+            sort(item.child);
+          }
+        });
+      };
+      // 多维数组转一维数组
+      sort(this.data);
+      data = data.map((item, index) => {
+        return {
+          id: item.id,
+          order: index,
+          category_id: item.category_id
+        };
+      });
+      return data;
+    }
+  },
   methods: {
     __init() {
       // 初始化
@@ -73,7 +97,6 @@ export default {
       this.axios
         .get("admin/category", { token: true })
         .then(res => {
-          console.log(res);
           let data = res.data.data;
           let addEditStatus = function(arr) {
             arr.forEach(item => {
@@ -203,7 +226,41 @@ export default {
           this.layout.hideLoading();
         });
     },
-    handleDrop() {},
+    nodeDragEnd(...options) {
+      // 拖拽结束
+      // 被拖拽节点对应的数据
+      let item = options[0].data;
+      // 结束拖拽时最后进入节点数据
+      let obj = options[1].data;
+      if (obj) {
+        if (options[2] === "before" || options[2] === "after") {
+          item.category_id = obj.category_id;
+        } else {
+          item.category_id = obj.id;
+        }
+      }
+    },
+    handleDrop(...options) {
+      // 拖拽排序
+      this.layout.showLoading();
+      this.axios
+        .post(
+          "/admin/category/sort",
+          {
+            sortdata: JSON.stringify(this.sortData)
+          },
+          {
+            token: true
+          }
+        )
+        .then(res => {
+          this.__init();
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
     createTop() {
       this.$prompt("请输顶级分类名称", "提示", {
         confirmButtonText: "创建",
