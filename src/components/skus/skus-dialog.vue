@@ -9,7 +9,7 @@
     <el-container style="height: 70vh;position: relative;margin: -30px -20px;">
       <el-aside
         width="200px"
-        style="position: absolute;top: 0;left: 0;bottom: 0;"
+        style="position: absolute;top: 0;left: 0;bottom: 50px;"
         class="bg-white border-right"
       >
         <!-- 侧边 -->
@@ -25,6 +25,20 @@
           </li>
         </ul>
       </el-aside>
+      <el-footer
+        style="position: absolute;left:0;bottom:0;height: 50px;width: 200px;display: flex;align-items: center;justify-content: center;"
+        class="border"
+      >
+        <el-pagination
+          :current-page="page.current"
+          :page-sizes="page.sizes"
+          :page-size="page.size"
+          layout="prev, next"
+          :total="page.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        ></el-pagination>
+      </el-footer>
       <el-container>
         <el-header
           style="position: absolute;top: 0;left: 200px;right: 0;height: 60px;line-height: 60px;"
@@ -61,61 +75,24 @@
 </template>
 
 <script>
+import common from "@/common/mixins/common";
 export default {
+  mixins: [common],
   data() {
     return {
+      preUrl: "skus",
+      loading: false,
       createModel: false,
       callback: false,
       chooseList: [], //选中数组
       skuIndex: 0,
-      skusList: [
-        {
-          name: "颜色",
-          type: 0,
-          list: [
-            {
-              id: 1,
-              name: "黄色",
-              image: "",
-              color: "",
-              ischeck: false
-            },
-            {
-              id: 2,
-              name: "红色",
-              image: "",
-              color: "",
-              ischeck: false
-            }
-          ]
-        },
-        {
-          name: "颜色",
-          type: 0,
-          list: [
-            {
-              id: 3,
-              name: "XL",
-              image: "",
-              color: "",
-              ischeck: false
-            },
-            {
-              id: 4,
-              name: "XXL",
-              image: "",
-              color: "",
-              ischeck: false
-            }
-          ]
-        }
-      ] //规格卡片
+      skusList: []
     };
   },
-  created() {},
   computed: {
     skuItem() {
-      return this.skusList[this.skuIndex].list;
+      let item = this.skusList[this.skuIndex];
+      return item ? item.list : [];
     },
     // 是否全选
     isChooseAll() {
@@ -123,6 +100,20 @@ export default {
     }
   },
   methods: {
+    getListResult(e) {
+      this.skusList = e.list.map(item => {
+        let list = item.default.split(",");
+        item.list = list.map(name => {
+          return {
+            name: name,
+            image: "",
+            color: "",
+            ischeck: false
+          };
+        });
+        return item;
+      });
+    },
     chooseSkus(callback) {
       this.callback = callback;
       this.createModel = true;
@@ -132,6 +123,7 @@ export default {
       if (typeof this.callback === "function") {
         let item = this.skusList[this.skuIndex];
         this.callback({
+          id: item.id,
           name: item.name,
           type: item.type,
           list: this.chooseList

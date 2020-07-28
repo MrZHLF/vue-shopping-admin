@@ -66,7 +66,7 @@
               type="danger"
               size="mini"
               plain
-              @click="deleteItem(scope)"
+              @click="deleteItem(scope.row)"
               >删除</el-button
             >
           </el-button-group>
@@ -80,11 +80,13 @@
     >
       <div style="flex: 1;" class="p-2">
         <el-pagination
-          :current-page="currentPage"
-          :page-sizes="[100, 200, 300, 400]"
-          :page-size="100"
+          :current-page="page.current"
+          :page-sizes="page.sizes"
+          :page-size="page.size"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="400"
+          :total="page.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         ></el-pagination>
       </div>
     </el-footer>
@@ -96,21 +98,21 @@
       top="5vh"
     >
       <el-form ref="ruleForm" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="规格名称" prop="name"
-          ><el-input
+        <el-form-item label="规格名称" prop="name">
+          <el-input
             v-model="form.name"
             placeholder="请输入规格名称"
             size="mini"
             style="width: 30%;"
-          ></el-input
-        ></el-form-item>
-        <el-form-item label="排序"
-          ><el-input-number
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number
             v-model="form.order"
             :min="0"
             size="mini"
-          ></el-input-number
-        ></el-form-item>
+          ></el-input-number>
+        </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status" size="mini">
             <el-radio :label="1" border>启用</el-radio>
@@ -122,11 +124,13 @@
             <span
               class="sku-list-item px-3 py-2 border rounded mr-3"
               style="line-height: initial;"
+              v-for="(item, index) in form.sku_list"
+              :key="index"
             >
-              <font>颜色</font>
-              <i class="el-icon-delete"></i>
+              <font>{{ item.name }}</font>
+              <i class="el-icon-delete" @click="deleteFormSkuList(index)"></i>
             </span>
-            <el-button>
+            <el-button @click="chooseSkus">
               <i class="el-icon-plus"></i>
             </el-button>
           </div>
@@ -177,11 +181,11 @@
               <template slot-scope="scope" v-if="scope.row.type !== 'input'">
                 <el-input
                   type="textarea"
-                  v-model="scope.row.value"
+                  v-model="scope.row.default"
                   placeholder="一行为一个属性值,多个属性值用换行符输入"
                   v-if="scope.row.isedit"
                 ></el-input>
-                <span v-else>{{ scope.row.value }}</span>
+                <span v-else>{{ scope.row.default }}</span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="180">
@@ -219,39 +223,18 @@
 </template>
 <script>
 import buttonSearch from "@/components/common/button-search.vue";
+import common from "@/common/mixins/common.js";
 export default {
+  mixins: [common],
   name: "list",
+  inject: ["layout", "app"],
   components: {
     buttonSearch
   },
   data() {
     return {
-      tableData: [
-        {
-          id: 1,
-          name: "鞋子",
-          order: 50,
-          status: 1,
-          sku_list: [
-            { id: 1, name: "颜色" },
-            { id: 2, name: "尺寸" }
-          ],
-          value_list: [
-            {
-              order: 50,
-              name: "特性",
-              type: "input",
-              value: ""
-            },
-            {
-              order: 50,
-              name: "前置摄像机",
-              type: "input",
-              value: "属性值"
-            }
-          ]
-        }
-      ],
+      preUrl: "goods_type",
+      tableData: [],
       multipleSelection: [], //多选
       currentPage: 1,
       createModel: false,
@@ -262,15 +245,7 @@ export default {
         status: 1,
         sku_list: []
       },
-      value_list: [
-        {
-          order: 50,
-          name: "属性名称",
-          type: "input",
-          value: "属性值",
-          isedit: false
-        }
-      ],
+      value_list: [],
       rules: {
         name: [{ required: true, message: "类型名称不能为空", trigger: "blur" }]
       }
@@ -282,24 +257,35 @@ export default {
       return arr.join(",");
     }
   },
-  created() {
-    this.__getData();
+  computed: {
+    skus_id() {
+      // 关联规格id组成的数组
+      return this.form.sku_list.map(item => item.id);
+    }
   },
   methods: {
-    deleteAll() {
-      // 批量删除
-      this.$confirm("此操作将永久删除选中规格, 是否继续?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      }).then(() => {
-        this.multipleSelection.forEach(item => {
-          let index = this.tableData.findIndex(v => v.id === item.id);
-          if (index !== -1) {
-            this.tableData.splice(index, 1);
-          }
+    deleteFormSkuList(index) {
+      // 删除关联规格
+      this.form.sku_list.splice(index, 1);
+    },
+    chooseSkus() {
+      // 选择关联规格
+      this.app.chooseSkus(e => {
+        let index = this.form.sku_list.findIndex(item => {
+          return (item.id = e.id);
         });
-        this.multipleSelection = [];
+        if (index === -1) {
+          this.form.sku_list.push(e);
+        }
+        console.log(e, "this.form.sku_list");
+      });
+    },
+    getListResult(e) {
+      // 从mixins接受的数据
+      this.tableData = e.list.map(item => {
+        item.value_list = item.goods_type_values;
+        item.sku_list = item.skus;
+        return item;
       });
     },
     openModel(e = false) {
@@ -340,7 +326,7 @@ export default {
             result = result && false;
             message.push("第" + no + "行属性名不能为空");
           }
-          if (item.type !== "input" && item.value == "") {
+          if (item.type !== "input" && item.default == "") {
             result = result && false;
             message.push("第" + no + "行属性值不能为空");
           }
@@ -360,53 +346,24 @@ export default {
         }
 
         if (res) {
-          var msg = "添加";
-          if (this.editIndex === -1) {
-            // 添加
-            this.tableData.unshift({
-              ...this.form,
-              value_list: [...this.value_list]
-            });
-          } else {
-            // 编辑
-            let item = this.tableData[this.editIndex];
-            item.name = this.form.name;
-            item.order = this.form.order;
-            item.status = this.form.status;
-            item.type = this.form.type;
-            item.sku_list = this.form.sku_list;
-            item.value_list = this.form.value_list;
-            msg = "修改";
-          }
-          this.createModel = false;
-          this.$message({
-            message: msg + "成功",
-            type: "success"
+          let value_list = this.value_list.map(item => {
+            if (item.default) {
+              item.default = item.default.replace(/\n/g, ",");
+            }
+            return item;
           });
+          let data = {
+            ...this.form,
+            skus_id: this.skus_id,
+            value_list: [...value_list]
+          };
+          let id = "";
+          if (this.editIndex !== -1) {
+            id = this.tableData[this.editIndex].id;
+          }
+          this.addOrEdit(data, id);
+          this.createModel = false;
         }
-      });
-    },
-    __getData() {},
-    changeStatus(item) {
-      // 修改状态
-      item.status = !item.status;
-      this.$message({
-        message: item.status ? "启用成功" : "禁用",
-        type: "success"
-      });
-    },
-    handleSelectionChange(val) {
-      this.multipleSelection = val;
-    },
-    deleteItem(scope) {
-      // 删除商品规格
-      console.log(scope);
-      this.$confirm("此操作将永久删除该规格, 是否继续?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      }).then(() => {
-        this.tableData.splice(scope.$index, 1);
       });
     },
     addValue() {
