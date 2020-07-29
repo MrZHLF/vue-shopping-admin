@@ -7,6 +7,7 @@
       ref="buttonSearch"
       class="pt-3"
       placeholder="手机号/邮箱/会员昵称"
+      @search="searchEvent"
     >
       <template #left>
         <!-- 左边 -->
@@ -26,25 +27,19 @@
           ></el-form-item>
           <el-form-item label="会员等级" class="mb-0">
             <el-select
-              v-model="search.group_id"
+              v-model="search.user_level_id"
               placeholder="要搜索的会员等级"
               size="mini"
             >
-              <el-option label="区域一" value="shanghai"></el-option>
-              <el-option label="区域二" value="beijing"></el-option>
+              <el-option
+                v-for="(item, index) in user_level"
+                :key="index"
+                :label="item.name"
+                :value="item.id"
+              ></el-option>
             </el-select>
           </el-form-item>
 
-          <el-form-item label="发布时间" class="mb-0">
-            <el-date-picker
-              v-model="search.time"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              size="mini"
-            ></el-date-picker>
-          </el-form-item>
           <el-form-item>
             <el-button type="info" size="mini" @click="searchEvent"
               >搜索</el-button
@@ -78,22 +73,23 @@
       </el-table-column>
       <el-table-column align="center" label="会员等级">
         <template slot-scope="scope">
-          {{ scope.row.level.name }}
+          {{ scope.row.user_level.name }}
         </template>
       </el-table-column>
       <el-table-column align="center" width="250" label="登录注册">
         <template slot-scope="scope">
           <div>注册时间 : {{ scope.row.create_time }}</div>
-          <div>最后登录 : {{ scope.row.update_time }}</div>
+          <div>最后登录 : {{ scope.row.last_login_time }}</div>
         </template>
       </el-table-column>
       <el-table-column prop="status" align="center" label="状态">
         <template slot-scope="scope">
-          <el-switch
-            v-model="scope.row.status"
-            :active-value="1"
-            :inactive-value="0"
-          ></el-switch>
+          <el-button
+            :type="scope.row.status ? 'success' : 'danger'"
+            plain
+            @click="changeStatus(scope.row)"
+            >{{ scope.row.status ? "启用" : "禁用" }}</el-button
+          >
         </template>
       </el-table-column>
       <el-table-column align="center" label="操作" width="150">
@@ -116,11 +112,13 @@
     >
       <div style="flex: 1;" class="p-2">
         <el-pagination
-          :current-page="currentPage"
-          :page-sizes="[100, 200, 300, 400]"
-          :page-size="100"
+          :current-page="page.current"
+          :page-sizes="page.sizes"
+          :page-size="page.size"
           layout="total, sizes, prev, pager, next, jumper"
-          :total="400"
+          :total="page.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         ></el-pagination>
       </div>
     </el-footer>
@@ -217,37 +215,23 @@
 </template>
 <script>
 import buttonSearch from "@/components/common/button-search.vue";
+import common from "@/common/mixins/common.js";
 export default {
   name: "list",
-  inject: ["app"],
+  inject: ["app", "layout"],
+  mixins: [common],
   components: {
     buttonSearch
   },
   data() {
     return {
-      tableData: [
-        {
-          id: 10,
-          username: "用户名",
-          avatar:
-            "https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4100987808,2324741924&fm=27&gp=0.jpg",
-          level_id: 1,
-          level: {
-            id: 1,
-            name: "普通会员"
-          },
-          create_time: "2019-07-24 15:52:56",
-          update_time: "2019-07-24 15:52:56",
-          status: 1 //启用
-        }
-      ],
-      currentPage: 1,
+      preUrl: "user",
+      tableData: [],
       createModel: false,
       editIndex: -1,
       search: {
         keyword: "",
-        group_id: 0,
-        time: ""
+        user_level_id: ""
       },
 
       form: {
@@ -260,11 +244,17 @@ export default {
         email: "",
         sex: 0,
         status: 1
-      }
+      },
+      user_level: []
     };
   },
-  created() {},
   methods: {
+    getListResult(e) {
+      // 从mixins接受的数据
+      this.tableData = e.list;
+      this.user_level = e.user_level;
+      console.log(e);
+    },
     openModel(e = false) {
       if (!e) {
         // 增加
@@ -326,42 +316,26 @@ export default {
         type: "success"
       });
     },
-    changeStatus(item) {
-      // 修改状态
-      item.status = !item.status;
-      this.$message({
-        message: item.status ? "启用成功" : "禁用",
-        type: "success"
-      });
-    },
-    deleteItem(scope) {
-      // 删除商品规格
-      console.log(scope);
-      this.$confirm("此操作将永久删除该规格, 是否继续?", "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      }).then(() => {
-        this.tableData.splice(scope.$index, 1);
-      });
+    getListUrl() {
+      //处理url以及参数
+      return `/admin/${this.preUrl}/${this.page.current}?limit=${this.page.size}&keyword=${this.search.keyword}&user_level_id=${this.search.user_level_id}`;
     },
     searchEvent(e = false) {
       // 搜索
       if (typeof e === "string") {
-        console.log("简单搜索", "4");
+        this.search.keyword = e;
+        this.getList();
         return;
       }
       // 高级搜索
-      console.log("高级搜索");
+      this.getList();
     },
     clearSearch() {
       // 清空筛选条件
       this.search = {
         keyword: "",
-        group_id: 0,
-        time: ""
+        user_level_id: ""
       };
-      this.$refs.buttonSearch[this.tabIndex].closeSuperSearch(); //触发子组件方法
     },
     chooseImage() {
       this.app.chooseImage(res => {
