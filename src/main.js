@@ -55,7 +55,6 @@ axios.interceptors.request.use(
 // 添加响应拦截器
 axios.interceptors.response.use(
   response => {
-    console.log("响应拦截器 成功");
     // 隐藏loading
     hideLoading();
     // 对响应数据做点什么

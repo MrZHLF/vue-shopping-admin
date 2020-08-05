@@ -381,15 +381,23 @@
       size="40%"
     >
       <div style="position: absolute;top: 52px;left: 0;right: 0;bottom: 0;">
-        <div style="position: absolute;top: 0;left: 0;right: 0;bottom: 0;">
-          25
+        <div style="position: absolute;top: 0;left: 0;right: 0;bottom: 60px;overflow-y: auto;">
+          <el-tree
+            :data="ruleList"
+            show-checkbox
+            node-key="id"
+			default-expand-all
+            :default-checked-keys="checkedKeys"
+			:check-strictly="true"
+            :props="defaultProps" @check="check">
+          </el-tree>
         </div>
         <div
           class="border d-flex align-items-center px-3 bg-white"
           style="position: absolute;height: 60px;bottom: 0;right: 0;right: 0;left: 0;"
         >
           <el-button @click="drawer = false">取消</el-button>
-          <el-button type="primary">确认</el-button>
+          <el-button type="primary" @click="submitRules">确认</el-button>
         </div>
       </div>
     </el-drawer>
@@ -402,6 +410,7 @@ export default {
   inject: ["app", "layout"],
   data() {
     return {
+		checkedKeys:[],
       drawer: false,
       keyword: "",
       preUrl: "manager",
@@ -442,7 +451,8 @@ export default {
         }
       },
       roleOptions: [],
-      dialogId: 0
+      dialogId: 0,
+	  drawerId:0
     };
   },
   filters: {
@@ -580,8 +590,43 @@ export default {
       }, 1);
     },
     openDrawer(item) {
-      this.drawer = true;
-    }
+		this.layout.showLoading()
+		this.axios.get('/admin/rule/1',{
+			token:true
+		}).then(res =>{
+			console.log(res)
+			this.drawer = true;
+			this.drawerId = item.id
+			this.ruleList = res.data.data.list
+			this.checkedKeys = item.rules.map(item =>item.id)
+			this.layout.hideLoading()
+		}).catch(err =>{
+			this.layout.hideLoading()
+		})
+      
+    },
+	check(...e){
+		this.checkedKeys = e[1].checkedKeys
+	},
+	submitRules(){
+		this.layout.showLoading()
+		this.axios.post('/admin/role/set_rules',{
+			id:this.drawerId,
+			rule_id:this.checkedKeys
+		},{
+			token:true
+		}).then(res =>{
+			this.drawer = false;
+			this.getList()
+			this.$message({
+				message:"权限配置成功",
+				type:'success'
+			})
+			this.layout.hideLoading()
+		}).catch(err =>{
+			this.layout.hideLoading()
+		})
+	}
   }
 };
 </script>
