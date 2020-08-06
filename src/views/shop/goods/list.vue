@@ -3,14 +3,13 @@
     class="bg-white px-3"
     style="margin: -20px;margin-top: -1rem;margin-bottom: 0!important;"
   >
-    <el-tabs v-model="tabIndex" @tab-click="getList">
-      <el-tab-pane
+    <el-tabs v-model="tabIndex" @tab-click="getList"
+      ><el-tab-pane
         v-for="(tab, index) in tabbars"
         :key="index"
         :label="tab.name"
-      >
-      </el-tab-pane>
-    </el-tabs>
+      ></el-tab-pane
+    ></el-tabs>
     <button-search
       ref="buttonSearch"
       placeholder="要搜索的商品名称"
@@ -18,14 +17,24 @@
     >
       <template #left>
         <!-- 左边 -->
-        <router-link :to="{ name: 'shop_goods_create' }" class="mr-2">
-          <el-button type="success" size="mini">发布商品</el-button>
-        </router-link>
+        <router-link :to="{ name: 'shop_goods_create' }" class="mr-2"
+          ><el-button type="success" size="mini"
+            >发布商品</el-button
+          ></router-link
+        >
 
-        <el-button type="warning" v-if="tab === 'delete'" size="mini"
+        <el-button
+          type="warning"
+          v-if="tab === 'delete'"
+          size="mini"
+          @click="doEvent('restore')"
           >恢复商品</el-button
         >
-        <el-button type="danger" size="mini" v-if="tab === 'delete'"
+        <el-button
+          type="danger"
+          size="mini"
+          v-if="tab === 'delete'"
+          @click="doEvent('destroy')"
           >彻底删除</el-button
         >
         <el-button
@@ -35,23 +44,29 @@
           @click="deleteAll"
           >批量删除</el-button
         >
-        <el-button size="mini" v-if="tab === 'all' || tab === 'off'"
+        <el-button
+          size="mini"
+          v-if="tab === 'all' || tab === 'off'"
+          @click="changeStatus(1)"
           >上架</el-button
         >
-        <el-button size="mini" v-if="tab === 'all' || tab === 'saling'"
+        <el-button
+          size="mini"
+          v-if="tab === 'all' || tab === 'saling'"
+          @click="changeStatus(0)"
           >下架</el-button
         >
       </template>
       <template #form>
         <!-- 表单 -->
         <el-form inline ref="form" :model="form" label-width="80px">
-          <el-form-item label="商品名称" class="mb-0">
-            <el-input
+          <el-form-item label="商品名称" class="mb-0"
+            ><el-input
               v-model="form.title"
               size="mini"
               placeholder="要搜索的商品名称"
-            ></el-input>
-          </el-form-item>
+            ></el-input
+          ></el-form-item>
           <el-form-item label="商品分类" class="mb-0">
             <el-select
               v-model="form.category_id"
@@ -83,8 +98,11 @@
       style="width: 100%"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column type="selection" width="45" align="center">
-      </el-table-column>
+      <el-table-column
+        type="selection"
+        width="45"
+        align="center"
+      ></el-table-column>
       <el-table-column prop="title" width="300" label="商品">
         <template slot-scope="scope">
           <div class="media">
@@ -106,8 +124,7 @@
         width="70"
         align="center"
         label="实际销量"
-      >
-      </el-table-column>
+      ></el-table-column>
       <el-table-column align="center" label="商品状态">
         <template slot-scope="scope">
           <span
@@ -134,8 +151,12 @@
           <span v-else>{{ scope.row.ischeck === 1 ? "通过" : "拒绝" }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="stock" align="center" width="80" label="总库存">
-      </el-table-column>
+      <el-table-column
+        prop="stock"
+        align="center"
+        width="80"
+        label="总库存"
+      ></el-table-column>
       <el-table-column align="center" width="120" label="价格(元)">
         <template slot-scope="scope">
           <span class="text-danger">{{ scope.row.min_price }}</span>
@@ -145,7 +166,12 @@
       </el-table-column>
       <el-table-column align="center" label="操作">
         <template slot-scope="scope">
-          <el-button type="text" size="mini">基础设置</el-button>
+          <el-button
+            type="text"
+            size="mini"
+            @click="navigate('shop_goods_create', scope.row.id)"
+            >基础设置</el-button
+          >
           <el-button
             type="text"
             size="mini"
@@ -155,24 +181,28 @@
                 ? 'text-danger'
                 : ''
             "
-            >商品规格</el-button
           >
+            商品规格
+          </el-button>
           <el-button
             type="text"
             size="mini"
             :class="scope.row.goods_attrs.length == 0 ? 'text-danger' : ''"
+            @click="navigate('shop_goods_attr', scope.row.id)"
             >商品属性</el-button
           >
           <el-button
             type="text"
             size="mini"
             :class="scope.row.goods_banner.length == 0 ? 'text-danger' : ''"
+            @click="navigate('shop_goods_banner', scope.row.id)"
             >媒体设置</el-button
           >
           <el-button
             type="text"
             size="mini"
             :class="!scope.row.content ? 'text-danger' : ''"
+            @click="navigate('shop_goods_content', scope.row.id)"
             >商品详情</el-button
           >
           <el-button type="text" size="mini">折扣设置</el-button>
@@ -226,8 +256,7 @@ export default {
         category_id: ""
       },
       tableData: [],
-      cateOptions: [],
-      multipleSelection: [] //多选
+      cateOptions: []
     };
   },
   filters: {
@@ -290,6 +319,71 @@ export default {
         title: "",
         category_id: ""
       };
+    },
+    doEvent(key) {
+      console.log(key);
+      if (this.ids.length === 0) {
+        return this.$message({
+          message: "请选择要操作的商品",
+          type: "error"
+        });
+      }
+      this.layout.showLoading();
+      let desc = key === "destroy" ? "商品删除成功" : "商品恢复成功";
+      this.axios
+        .post(
+          "/admin/goods/" + key,
+          {
+            ids: this.ids
+          },
+          { token: true }
+        )
+        .then(res => {
+          this.$message({
+            message: desc,
+            type: "success"
+          });
+          this.getList();
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
+    changeStatus(status) {
+      if (this.ids.length === 0) {
+        return this.$message({
+          message: "请选择要操作的商品",
+          type: "error"
+        });
+      }
+      this.layout.showLoading();
+      this.axios
+        .post(
+          "/admin/goods/changestatus",
+          {
+            ids: this.ids,
+            status
+          },
+          { token: true }
+        )
+        .then(res => {
+          this.$message({
+            message: status === 1 ? "商品上架成功" : "商品下架成功",
+            type: "success"
+          });
+          this.getList();
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
+    navigate(name, id) {
+      this.$router.push({
+        name,
+        params: { id }
+      });
     }
   }
 };
