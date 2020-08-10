@@ -30,7 +30,7 @@
     </div>
     <input
       type="text"
-      :value="item.name"
+      :value="item.text"
       @input="inputChange"
       class="form-control text-center border-0"
       style="width: 80px;font-size: 15px;"
@@ -38,7 +38,7 @@
     <span
       class="btn btn-light p-0 position-absolute"
       style="line-height: 1;right: -10px;top: -10px;"
-      @click="delSkuValue({ cardIndex: cardIndex, valueIndex: index })"
+      @click="delSkuValueEvent"
     >
       <i class="el-icon-circle-close"></i>
     </span>
@@ -48,7 +48,7 @@
 <script>
 import { mapMutations } from "vuex";
 export default {
-  inject: ["app"],
+  inject: ["app", "layout"],
   props: {
     type: {
       type: Number,
@@ -60,8 +60,27 @@ export default {
   },
   methods: {
     ...mapMutations(["delSkuValue", "updateSkuValue"]),
+    delSkuValueEvent() {
+      this.layout.showLoading();
+      this.axios
+        .post(
+          `/admin/goods_skus_card_value/${this.item.id}/delete`,
+          {},
+          { token: true }
+        )
+        .then(res => {
+          this.delSkuValue({
+            cardIndex: this.cardIndex,
+            valueIndex: this.index
+          });
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
     inputChange(e) {
-      this.vModel("name", e.target.value);
+      this.vModel("text", e.target.value);
       // console.log(e)
     },
     vModel(key, value) {

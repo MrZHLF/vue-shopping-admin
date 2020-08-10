@@ -36,6 +36,10 @@ let routes = [
         component: "shop/goods/attr"
       },
       {
+        meta: { title: "商品规格" },
+        component: "shop/goods/sku"
+      },
+      {
         meta: { title: "相册管理" },
         component: "image/index"
       },

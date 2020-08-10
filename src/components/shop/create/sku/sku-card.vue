@@ -40,7 +40,7 @@
         :disabled="total === index + 1"
         @click="sortCard('moveDown', index)"
       ></el-button>
-      <el-button size="mini" type="danger" @click="delSkuCard(index)"
+      <el-button size="mini" type="danger" @click="delSkuCardEvent"
         >删除</el-button
       >
     </div>
@@ -62,7 +62,7 @@
           type="text"
           size="mini"
           icon="el-icon-plus"
-          @click="addSkuValue(index)"
+          @click="addSkuValueEvent"
         >
           增加规格值</el-button
         >
@@ -74,8 +74,9 @@
 <script>
 import { mapState, mapMutations } from "vuex";
 import skuCardChildren from "./sku-card-children.vue";
+let defaultVal = ["属性值", "#FFFFFF", "/favicon.ico"];
 export default {
-  inject: ["app"],
+  inject: ["app", "layout"],
   components: {
     skuCardChildren
   },
@@ -113,8 +114,58 @@ export default {
       "addSkuValue",
       "sortSkuValue"
     ]),
+    delSkuCardEvent() {
+      this.layout.showLoading();
+      this.axios
+        .post(
+          `/admin/goods_skus_card/${this.item.id}/delete`,
+          {},
+          { token: true }
+        )
+        .then(res => {
+          this.delSkuCard(this.index);
+          this.layout.hideLoading();
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
+    addSkuValueEvent() {
+      this.layout.showLoading();
+      this.axios
+        .post(
+          "/admin/goods_skus_card_value",
+          {
+            goods_skus_card_id: this.item.id,
+            name: this.item.name,
+            order: 50,
+            value: defaultVal[this.item.type]
+          },
+          { token: true }
+        )
+        .then(res => {
+          let data = res.data.data;
+          data.text = defaultVal[0];
+          data.color = defaultVal[1];
+          data.image = defaultVal[2];
+          this.layout.hideLoading();
+          this.addSkuValue({
+            index: this.index,
+            data
+          });
+        })
+        .catch(err => {
+          this.layout.hideLoading();
+        });
+    },
+    updateSkuCard() {
+      this.axios.post("/admin/goods_skus_card/" + this.item.id, this.item, {
+        token: true
+      });
+    },
     vModel(key, index, value) {
       this.vModelSkuCard({ key, index, value });
+      this.updateSkuCard();
     },
     sortCard(action, index) {
       // 上移

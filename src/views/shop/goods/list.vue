@@ -175,6 +175,7 @@
           <el-button
             type="text"
             size="mini"
+            @click="navigate('shop_goods_sku', scope.row.id)"
             :class="
               (scope.row.sku_type == 0 && !scope.row.sku_value) ||
               (scope.row.sku_type == 1 && !scope.row.goods_skus.length)
