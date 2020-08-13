@@ -29,6 +29,7 @@
       </template>
     </div>
     <input
+	v-if="type === 0"
       type="text"
       :value="item.text"
       @input="inputChange"
@@ -58,6 +59,14 @@ export default {
     index: Number,
     cardIndex: Number
   },
+  watch:{
+	type(newVal,oldVal) {
+		let defaultVal = ["属性值", "#FFFFFF", "/favicon.ico"];
+		let keys = ['text','color','image']
+		this.item.value = this.item[keys[newVal]] ? this.item[keys[newVal]] : defaultVal[newVal]
+		this.updateSkuValueEvent()
+	}  
+  },
   methods: {
     ...mapMutations(["delSkuValue", "updateSkuValue"]),
     delSkuValueEvent() {
@@ -79,6 +88,14 @@ export default {
           this.layout.hideLoading();
         });
     },
+	updateSkuValueEvent() {
+		let keys = ['text','color','image']
+		this.item.value = this.item[keys[this.type]]
+		this.axios.post('/admin/goods_skus_card_value/'+this.item.id,this.item,{
+			token:true
+		}).then(res =>{
+		})
+	},
     inputChange(e) {
       this.vModel("text", e.target.value);
       // console.log(e)

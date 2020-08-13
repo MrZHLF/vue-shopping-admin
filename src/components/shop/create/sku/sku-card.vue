@@ -90,6 +90,11 @@ export default {
       list: this.item.list
     };
   },
+  computed: {
+  	...mapState({
+		sku_card:state =>state.goods_create.sku_card
+	})
+  },
   mounted() {
     // 监听list变化
     this.$watch("item.list", (newValue, oldValue) => {
@@ -103,6 +108,15 @@ export default {
           index: this.index,
           value: this.list
         });
+		this.axios.post('/admin/goods_skus_card_value/sort',{
+			sortdata:this.list.map((item,index) =>{
+				return {
+					id:item.id,
+					order:index + 1
+				}
+			},{token:true})
+		})
+		
       }
     });
   },
@@ -130,7 +144,7 @@ export default {
           this.layout.hideLoading();
         });
     },
-    addSkuValueEvent() {
+    addSkuValueEvent(value=false) {
       this.layout.showLoading();
       this.axios
         .post(
@@ -139,15 +153,15 @@ export default {
             goods_skus_card_id: this.item.id,
             name: this.item.name,
             order: 50,
-            value: defaultVal[this.item.type]
+            value: value==='string' ? value : defaultVal[this.item.type]
           },
           { token: true }
         )
         .then(res => {
           let data = res.data.data;
-          data.text = defaultVal[0];
-          data.color = defaultVal[1];
-          data.image = defaultVal[2];
+          data.text = this.item.type ===0 ? data.value : defaultVal[0];
+          data.color =this.item.type ===1 ? data.value : defaultVal[1];
+          data.image = this.item.type ===2 ? data.value : defaultVal[2];
           this.layout.hideLoading();
           this.addSkuValue({
             index: this.index,
@@ -170,14 +184,25 @@ export default {
     sortCard(action, index) {
       // 上移
       this.sortSkuCard({ action, index });
+	  this.axios.post('/admin/goods_skus_card/sort',{
+		sortdata: this.sku_card.map((item,index) =>{
+			return {
+				id:item.id,
+				order:index +1 
+			}
+		})
+	  },{token:true})
     },
     chooseSkus() {
       // 选择规格
       this.app.chooseSkus(res => {
         this.vModel("name", this.index, res.name);
         this.vModel("type", this.index, res.type);
-        this.vModel("list", this.index, res.list);
-        this.list = res.list;
+        // this.vModel("list", this.index, res.list);
+        // this.list = res.list;
+		res.list.forEach(item =>{
+			this.addSkuValueEvent(item.name)
+		})
       });
     }
   }
