@@ -137,12 +137,12 @@
       <el-table-column align="center" width="120" label="审核状态">
         <template slot-scope="scope">
           <div class="d-flex flex-column" v-if="!scope.row.ischeck">
-            <el-button type="success" @click="scope.row.ischeck = 1" plain
+            <el-button type="success" @click="checkGoods(scope.row,1)" plain
               >审核通过</el-button
             >
             <el-button
               type="danger"
-              @click="scope.row.ischeck = 2"
+              @click="checkGoods(scope.row,2)"
               plain
               class="ml-0 mt-0"
               >审核拒绝</el-button
@@ -207,7 +207,7 @@
             >商品详情</el-button
           >
           <el-button type="text" size="mini">折扣设置</el-button>
-          <el-button type="text" size="mini">删除商品</el-button>
+          <el-button type="text" size="mini" @click="deleteItem(scope.row)">删除商品</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -380,6 +380,21 @@ export default {
           this.layout.hideLoading();
         });
     },
+	checkGoods(item,status) {
+		this.layout.showLoading()
+		this.axios.post(`/admin/goods/${item.id}/check`,{
+			ischeck:status
+		},{token:true}).then(res =>{
+			this.$message({
+				message:'操作成功',
+				type:'success'
+			})
+			this.getList()
+			this.layout.hideLoading()
+		}).catch(err =>{
+			this.layout.hideLoading()
+		})
+	},
     navigate(name, id) {
       this.$router.push({
         name,

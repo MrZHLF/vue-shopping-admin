@@ -38,7 +38,7 @@
           v-for="(sku, skuI) in item.skus"
           :key="skuI"
         >
-          {{ sku.name }}
+          {{ sku.value }}
         </th>
         <td class="text-center" width="100">
           {{ item.images }}

@@ -66,8 +66,7 @@
       type="primary"
       style="position: fixed;bottom: 50px;right: 50px;"
       @click="submit"
-      >提交</el-button
-    >
+      >提交</el-button>
   </div>
 </template>
 

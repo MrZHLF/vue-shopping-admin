@@ -102,6 +102,11 @@
         </el-form-item>
       </el-form>
     </template>
+	<el-button
+	  type="primary"
+	  style="position: fixed;bottom: 50px;right: 50px;"
+	  @click="submit"
+	  >提交</el-button>
   </div>
 </template>
 
@@ -155,6 +160,33 @@ export default {
     this.getData();
   },
   methods: {
+	  submit(){ 
+		  let list = []
+		  if(this.$refs.table){
+			list = this.$refs.table.list.map(item =>{
+				item.goods_id = this.id
+				return item
+			})  
+		  }
+		  
+		this.layout.showLoading();
+		  this.axios.post('/admin/goods/updateskus/'+this.id,{
+			sku_type:this.skus_type,
+			sku_value:this.sku_value,
+			goodsSkus:list
+		  },{token:true}).then(res =>{
+			  this.$message({
+				  message:'保存成功',
+				  type:'success'
+			  })
+			  this.$router.push({
+				  name:'shop_goods_list'
+			  })
+			 this.layout.hideLoading(); 
+		  }).catch(err =>{
+			this.layout.hideLoading();  
+		  })
+	  },
     getData() {
       if (!this.id) {
         this.$message({
@@ -166,10 +198,35 @@ export default {
         });
       }
       this.layout.showLoading();
+	  let defaultVal = ["属性值", "#FFFFFF", "/favicon.ico"];
       this.axios
         .get("/admin/goods/read/" + this.id, { token: true })
         .then(res => {
           console.log(res);
+		  let data = res.data.data
+		  this.vModel('sku_card',data.goodsSkusCard.map(item =>{
+			item.list = item.goodsSkusCardValue
+			item.list.map(v =>{
+				v.text = item.type === 0 ? v.value : defaultVal[0]
+				v.color = item.type === 1 ? v.value : defaultVal[1]
+				v.image = item.type === 2 ? v.value : defaultVal[2]
+			})
+			return item
+		  }))
+		  this.vModel('skus_type',data.sku_type)
+		  this.sku_value = data.sku_value ? data.sku_value : {
+			oprice: 0,
+			pprice: 0,
+			cprice: 0,
+			weight: 0,
+			volume: 0
+		 },
+		 this.$nextTick(() =>{
+			 if(this.$refs.table) {
+				this.$refs.table.list = data.goodsSkus 
+			 }
+			
+		 })
           this.layout.hideLoading();
         })
         .catch(err => {
@@ -191,7 +248,6 @@ export default {
           { token: true }
         )
         .then(res => {
-          console.log(res);
           let data = res.data.data;
           data.list = [];
           this.addSkuCard(data);
