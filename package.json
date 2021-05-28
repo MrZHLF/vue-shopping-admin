@@ -13,7 +13,7 @@
     "core-js": "^3.6.5",
     "echarts": "^4.8.0",
     "element-ui": "^2.4.5",
-    "tinymce": "^5.0.16",
+    "tinymce": "^5.7.1",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
     "vuex": "^3.4.0"
